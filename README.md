@@ -1,49 +1,18 @@
-## midi_util
 
+# midi_util  
 
-  
-  
-  
-
-### Introduction
-
-
-
-  
-
-**midi_util** is a pure dart library that allows one to write multi-track
-
-Musical Instrument Digital Interface (MIDI) files from within dart
-
-programs (both format 1 and format 2 files are now supported).
-
-It is object-oriented and allows one to create and write these
-
-files with a minimum of fuss.
-
-  
+**midi_util** is a pure dart library that allows one to write multi-track Musical Instrument Digital Interface (MIDI) files from within dart programs (both format 1 and format 2 files are now supported).It is object-oriented and allows one to create and write these files with a minimum of fuss.
 
 It is inspired by the python library [MIDIUtil](https://github.com/MarkCWirt/MIDIUtil) by Mark Conway Wirt.
-  
 
-midi_util isn't a full implementation of the MIDI specification. The actual
+midi_util isn't a full implementation of the MIDI specification. The actual specification is a large, sprawling document which has organically grown over the course of decades. I have selectively implemented some of the more useful and common aspects of the specification. Regardless, the code is fairly easy to understand and well structured. Additions can be made to the library by anyone with a good working knowledge of the MIDI file format and a good, working knowledge of Dart. Documentation for extending the library is provided.
 
-specification is a large, sprawling document which has organically grown
-
-over the course of decades. I have selectively implemented some of the
-
-more useful and common aspects of the specification. Regardless, the code is fairly easy to understand and well structured. Additions can be made to the library by anyone with a good working knowledge of the MIDI file format and a good, working knowledge of Dart. Documentation for extending the library is provided.
-
-  
-
-This software is distributed under an Open Source license and you are free to use it as you see fit, provided that attribution is maintained. See License.txt in the source distribution for details. 
-  
+This software is distributed under an Open Source license and you are free to use it as you see fit, provided that attribution is maintained. See License.txt in the source distribution for details.  
 
 ### Quick Start
 
 -----------
 
-  
 
 Using the software is easy:
 
@@ -59,95 +28,48 @@ Using the software is easy:
 
   
 
-Detailed documentation is provided; what follows is a simple example
-
-to get you going quickly. In this example we'll create a one track MIDI
-
-File, assign a tempo to the track, and write a C-Major scale. Then we
-
-write it to disk.
+Detailed documentation is provided; what follows is a simple example to get you going quickly. In this example we'll create a one track MIDI File, assign a tempo to the track, and write a C-Major scale. Then we write it to disk.
 
   
 
+    import 'dart:io';
+    
     import 'package:midi_util/midi_util.dart';
     
-      
-    
     void main() {
+      List degrees = [60, 62, 64, 65, 67, 69, 71, 72]; //  # MIDI note number
+      var track = 0;
+      var channel = 0;
+      var time = 0; //    # In beats
+      var duration = 1; //    # In beats
+      var tempo = 60; //   # In BPM
+      var volume = 100; //  # 0-127, as per the MIDI standard
     
-    List degrees = [60, 62, 64, 65, 67, 69, 71, 72]; // # MIDI note number
-    
-    var track = 0;
-    
-    var channel = 0;
-    
-    var time = 0; // # In beats
-    
-    var duration = 1; // # In beats
-    
-    var tempo = 60; // # In BPM
-    
-    var volume = 100; // # 0-127, as per the MIDI standard
-    
+      MIDIFile myMIDI = MIDIFile(2); //  # One track
+      myMIDI.addTempo(track, time, tempo);
+      myMIDI.addKeySignature(track, time, 0, SHARPS, MAJOR);
       
+      List.generate(degrees.length, (i) {
+        myMIDI.addNote(track, channel, degrees[i], time + i, duration, 100);
+      });
     
-    MIDIFile myMIDI = MIDIFile(2); // # One track
+      myMIDI.addKeySignature(1, 4, 3, SHARPS, MAJOR);
+      myMIDI.addProgramChange(1, 1, time, 40);
     
-    myMIDI.addTempo(track, time, tempo);
+      List.generate(degrees.length, (i) {
+        myMIDI.addNote(1, 1, degrees[i], time + i, duration, volume);
+      });
     
-    myMIDI.addKeySignature(track, time, 0, SHARPS, MAJOR);
-    
-    List.generate(degrees.length, (i) {
-    
-    myMIDI.addNote(track, channel, degrees[i], time + i, duration, 100);
-    
-    });
-    
-      
-    
-    myMIDI.addKeySignature(1, 4, 3, SHARPS, MAJOR);
-    
-    myMIDI.addProgramChange(1, 1, time, 40);
-    
-      
-    
-    List.generate(degrees.length, (i) {
-    
-    myMIDI.addNote(1, 1, degrees[i], time + i, duration, volume);
-    
-    });
-    
-      
-    
-    var outputFile = File('c_scale.mid');
-    
-    myMIDI.writeFile(outputFile);
-    
+      var outputFile = File('c_scale.mid');
+      myMIDI.writeFile(outputFile);
     }
 
   
   
 
-There are several additional event types that can be added and there are
+There are several additional event types that can be added and there are various options available for creating the MIDIFile object, but the above is sufficient to begin using the library and creating note sequences. The above code is found in machine-readable form in the examples directory. A detailed class reference and documentation describing how to extend the library is provided in the documentation directory.
 
-various options available for creating the MIDIFile object, but the above
 
-is sufficient to begin using the library and creating note sequences.
 
-  
-
-The above code is found in machine-readable form in the examples directory.
-
-A detailed class reference and documentation describing how to extend
-
-the library is provided in the documentation directory.
-
-  
-
-Have fun!
-
-  
-
-Thank You.
 
 
