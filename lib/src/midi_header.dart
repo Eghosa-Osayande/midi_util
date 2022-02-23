@@ -31,7 +31,6 @@ class MIDIHeader extends Object {
 
   writeFile(File fileHandle) {
     fileHandle.writeAsBytesSync(this.headerString);
-    print(this.headerString);
     fileHandle.writeAsBytesSync(this.headerSize, mode : FileMode.append);
     fileHandle.writeAsBytesSync(this.formatnum, mode : FileMode.append);
     fileHandle.writeAsBytesSync(this.numTracks,  mode : FileMode.append);
