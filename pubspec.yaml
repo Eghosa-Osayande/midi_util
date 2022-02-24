@@ -1,6 +1,6 @@
 name: midi_util
 description: Pure Dart library that allows one to write multi-track Musical Instrument Digital Interface (MIDI) files from within dart programs
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/Eghosa-Osayande/midi_util
 
 environment:
