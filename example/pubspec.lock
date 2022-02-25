@@ -88,6 +88,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.7.0"
+  midi_util:
+    dependency: "direct main"
+    description:
+      name: midi_util
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.2"
   path:
     dependency: transitive
     description:
