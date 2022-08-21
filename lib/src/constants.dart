@@ -11,10 +11,10 @@ const int MAJOR = 0;
 ///Accidental type
 const int MINOR = 1;
 
-///C
+///Accidentals flat
 const int SHARPS = 1;
 
-///Accidentals
+///Accidentals flat
 const int FLATS = -1;
 
 class AccidentalType {

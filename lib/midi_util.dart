@@ -3,4 +3,4 @@
 library midi_util;
 
 export 'src/constants.dart';
-export 'src/midi_file.dart';
+export 'src/midi_file.dart' show MIDIFile;

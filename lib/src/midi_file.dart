@@ -12,64 +12,60 @@ import 'midi_track.dart';
 ///proper and well-formed MIDI file.
 ///
 class MIDIFile extends Object {
-  late List<MIDITrack> _tracks;
-  late int numTracks;
-  late MIDIHeader _header;
-  late bool _adjust_origin;
-  late bool _closed;
-  late int _ticks_per_quarternote;
-  late bool _eventtime_is_ticks;
-  late Function _time_to_ticks;
-  late int _event_counter;
+  final MIDIHeader _header;
+
+  final int ticks_per_quarternote;
+  final bool eventtime_is_ticks;
+  final List<MIDITrack> _tracks;
+
+  int _event_counter = 0;
+  bool _closed = false;
+  int _numTracks = 0;
+
+  // MIDIFile._({
+  //   int numTracks = 1,
+  // }) {}
+
+  static int _getNumTracksFromFileFormat(int file_format, int numTracks) {
+    return (file_format == 1) ? numTracks + 1 : numTracks;
+  }
 
   MIDIFile({
-    this.numTracks = 1,
-  }) {
-    if (numTracks < 1) throw Exception("numTracksmust be >=1");
-    bool removeDuplicates = true;
-    bool deinterleave = true;
-    bool _adjust_origin = false;
-    int file_format = 1;
-    int _ticks_per_quarternote = TICKSPERQUARTERNOTE;
-    bool _eventtime_is_ticks = false;
-    this._tracks = [];
-    if (file_format == 1) {
-      this.numTracks =
-          numTracks + 1; // this._tracks[0] is the baked-in tempo track
+    int numTracks = 1,
+    bool removeDuplicates = true,
+    bool deinterleave = true,
+    this.ticks_per_quarternote = TICKSPERQUARTERNOTE,
+    this.eventtime_is_ticks = false,
+    int file_format = 1,
+  })  : assert(numTracks >= 1),
+        // this._tracks[0] is the baked-in tempo track
+        this._numTracks = _getNumTracksFromFileFormat(file_format, numTracks),
+        this._header = MIDIHeader(
+          _getNumTracksFromFileFormat(file_format, numTracks),
+          file_format,
+          ticks_per_quarternote,
+        ),
+        _tracks = List.generate(
+          _getNumTracksFromFileFormat(file_format, numTracks),
+          (index) {
+            return MIDITrack(removeDuplicates, deinterleave);
+          },
+        );
+
+  num _time_to_ticks(num note_time) {
+    if (this.eventtime_is_ticks) {
+      return note_time;
     } else {
-      this.numTracks = numTracks;
+      return _quarter_to_tick(note_time);
     }
-
-    this._header =
-        MIDIHeader(this.numTracks, file_format, _ticks_per_quarternote);
-
-    this._adjust_origin = _adjust_origin;
-    this._closed = false;
-
-    this._ticks_per_quarternote = _ticks_per_quarternote;
-    this._eventtime_is_ticks = _eventtime_is_ticks;
-
-    if (this._eventtime_is_ticks) {
-      this._time_to_ticks = (x) => x;
-    } else {
-      this._time_to_ticks = this._quarter_to_tick;
-    }
-
-    List.generate(this.numTracks, (index) {
-      this._tracks.add(MIDITrack(removeDuplicates, deinterleave));
-    });
-
-    this._event_counter = 0;
   }
 
-  _quarter_to_tick(quarternote_time) {
-    return double.parse(
-            (quarternote_time * this._ticks_per_quarternote).toString())
-        .toInt();
+  int _quarter_to_tick(num quarternote_time) {
+    return double.parse((quarternote_time * this.ticks_per_quarternote).toString()).toInt();
   }
 
-  _tick_to_quarter(ticknum) {
-    return double.parse(ticknum.toString()) / this._ticks_per_quarternote;
+  num _tick_to_quarter(num ticknum) {
+    return double.parse(ticknum.toString()) / this.ticks_per_quarternote;
   }
 
   /// Add notes to the MIDIFile object
@@ -92,14 +88,7 @@ class MIDIFile extends Object {
   /// `csound <http:///csound.github.io/>`_ orchestra files directly from the
   /// class ``EventList``.
 
-  addNote(
-      {required int track,
-      required int channel,
-      required int pitch,
-      required num time,
-      required num duration,
-      int volume = 100,
-      annotation = ''}) {
+  addNote({required int track, required int channel, required int pitch, required num time, required num duration, int volume = 100, annotation = ''}) {
     if (this._header.numeric_format == 1) {
       track += 1;
     }
@@ -116,24 +105,6 @@ class MIDIFile extends Object {
     this._event_counter += 1;
   }
 
-  /// Name a track.
-
-  /// :param track: The track to which the name is assigned.
-  /// :param time: The time (in beats) at which the track name event is
-  ///     placed.  In general this should probably be time 0 (the beginning
-  ///     of the track).
-  /// :param trackName: The name to assign to the track [String]
-
-  _addTrackName(
-      {required int track, required num time, required String trackName}) {
-    if (this._header.numeric_format == 1) {
-      track += 1;
-    }
-
-    this._tracks[track].addTrackName(this._time_to_ticks(time), trackName,
-        insertion_order: this._event_counter);
-    this._event_counter += 1;
-  }
 // *
   ///         Add a time signature event.
 
@@ -183,20 +154,19 @@ class MIDIFile extends Object {
   ///         time signature of, say, 6/8, one still needs to specify the clocks
   ///         per quarter note.
 
-  addTimeSignature(
-      {required int track,
-      required num time,
-      required int numerator,
-      required int denominator,
-      required clocks_per_tick,
-      notes_per_quarter = 8}) {
+  addTimeSignature({
+    required int track,
+    required num time,
+    required int numerator,
+    required int denominator,
+    required clocks_per_tick,
+    notes_per_quarter = 8,
+  }) {
     if (this._header.numeric_format == 1) {
       track = 0;
     }
 
-    this._tracks[track].addTimeSignature(this._time_to_ticks(time), numerator,
-        denominator, clocks_per_tick, notes_per_quarter,
-        insertion_order: this._event_counter);
+    this._tracks[track].addTimeSignature(this._time_to_ticks(time), numerator, denominator, clocks_per_tick, notes_per_quarter, insertion_order: this._event_counter);
     this._event_counter += 1;
   }
 
@@ -213,8 +183,7 @@ class MIDIFile extends Object {
       track = 0;
     }
 
-    this._tracks[track].addTempo(this._time_to_ticks(time), tempo,
-        insertion_order: this._event_counter);
+    this._tracks[track].addTempo(this._time_to_ticks(time), tempo, insertion_order: this._event_counter);
     this._event_counter += 1;
   }
 
@@ -247,20 +216,12 @@ class MIDIFile extends Object {
 
   ///     MyMIDI.addKeySignature(0, 0, 3, SHARPS, MINOR)
 
-  addKeySignature(
-      {required int track,
-      required num time,
-      required int no_of_accidentals,
-      required int accidental_type,
-      required int accidental_mode,
-      insertion_order = 0}) {
+  addKeySignature({required int track, required num time, required int no_of_accidentals, required int accidental_type, required int accidental_mode, insertion_order = 0}) {
     if (this._header.numeric_format == 1) {
       track = 0; // User reported that this is needed.
     }
 
-    this._tracks[track].addKeySignature(this._time_to_ticks(time),
-        no_of_accidentals, accidental_type, accidental_mode,
-        insertion_order: this._event_counter);
+    this._tracks[track].addKeySignature(this._time_to_ticks(time), no_of_accidentals, accidental_type, accidental_mode, insertion_order: this._event_counter);
     this._event_counter += 1;
   }
 
@@ -271,42 +232,12 @@ class MIDIFile extends Object {
   /// :param time: The time (in beats) at which the program change event is  placed [double].
   /// :param program: the program number. [Integer, 0-127].
 
-  addProgramChange(
-      {required int tracknum,
-      required int channel,
-      required num time,
-      required int program}) {
+  addProgramChange({required int tracknum, required int channel, required num time, required int program}) {
     if (this._header.numeric_format == 1) {
       tracknum += 1;
     }
 
-    this._tracks[tracknum].addProgramChange(
-        channel, this._time_to_ticks(time), program,
-        insertion_order: this._event_counter);
-    this._event_counter += 1;
-  }
-
-  /// Add a channel control event
-
-  /// :param track: The track to which the event is added.
-  /// :param channel: the MIDI channel to assign to the event.[Integer, 0-15]
-  /// :param time: The time (in beats) at which the event is placed [double].
-  /// :param controller_number: The controller ID of the event.
-  /// :param parameter: The event's parameter, the meaning of which varies by event type.
-
-  _addControllerEvent(
-      {required int track,
-      required int channel,
-      required num time,
-      required dynamic controller_number,
-      required dynamic parameter}) {
-    if (this._header.numeric_format == 1) {
-      track += 1;
-    }
-
-    this._tracks[track].addControllerEvent(
-        channel, this._time_to_ticks(time), controller_number, parameter,
-        insertion_order: this._event_counter); // noqa: E128
+    this._tracks[tracknum].addProgramChange(channel, this._time_to_ticks(time), program, insertion_order: this._event_counter);
     this._event_counter += 1;
   }
 
@@ -315,7 +246,7 @@ class MIDIFile extends Object {
   /// param fileHandle: A file handle that has been opened for binary
   /// writing.
 
-  writeFile(File fileHandle) {
+  Future<void> writeFile(File fileHandle) async {
     this._header.writeFile(fileHandle);
 
     // Close the _tracks and have them create the MIDI event data structures.
@@ -323,9 +254,9 @@ class MIDIFile extends Object {
 
     // Write the MIDI Events to file.
 
-    List.generate(this.numTracks, (i) {
-      this._tracks[i].writeTrack(fileHandle);
-    });
+    for (var track in _tracks) {
+      await track.writeTrack(fileHandle);
+    }
   }
 
   /// Close the MIDIFile for further writing.
@@ -337,7 +268,7 @@ class MIDIFile extends Object {
   close() {
     if (this._closed) return;
 
-    List.generate(this.numTracks, (i) {
+    List.generate(this._numTracks, (i) {
       this._tracks[i].closeTrack();
       //  We want things like program changes to come before notes when
       //  they are at the same time, so we sort the MIDI events by both
@@ -346,34 +277,45 @@ class MIDIFile extends Object {
       this._tracks[i].MIDIEventList = sortEvents(this._tracks[i].MIDIEventList);
     });
 
-    var origin = this.findOrigin();
-
-    List.generate(this.numTracks, (i) {
-      this._tracks[i].adjustTimeAndOrigin(origin, this._adjust_origin);
+    List.generate(this._numTracks, (i) {
+      this._tracks[i].adjustTime();
       this._tracks[i].writeMIDIStream();
     });
 
     this._closed = true;
   }
 
-  /// Find the earliest time in the file's _tracks.append.
+  /// Add a channel control event
 
-  findOrigin() {
-    var origin = 100000000; // A little silly, but we'll assume big enough
+  /// :param track: The track to which the event is added.
+  /// :param channel: the MIDI channel to assign to the event.[Integer, 0-15]
+  /// :param time: The time (in beats) at which the event is placed [double].
+  /// :param controller_number: The controller ID of the event.
+  /// :param parameter: The event's parameter, the meaning of which varies by event type.
 
-    // Note: This code assumes that the MIDIEventList has been sorted, so this
-    // should be insured before it is called. It is probably a poor design to do
-    // TODO: -- Consider making this less efficient but more robust by not
-    //          assuming the list to be sorted.
-
-    for (var track in this._tracks) {
-      if (track.MIDIEventList.length > 0) {
-        if (track.MIDIEventList[0].tick < origin) {
-          origin = track.MIDIEventList[0].tick;
-        }
-      }
+  _addControllerEvent({required int track, required int channel, required num time, required dynamic controller_number, required dynamic parameter}) {
+    if (this._header.numeric_format == 1) {
+      track += 1;
     }
 
-    return origin;
+    this._tracks[track].addControllerEvent(channel, this._time_to_ticks(time), controller_number, parameter, insertion_order: this._event_counter); // noqa: E128
+    this._event_counter += 1;
+  }
+
+  /// Name a track.
+
+  /// :param track: The track to which the name is assigned.
+  /// :param time: The time (in beats) at which the track name event is
+  ///     placed.  In general this should probably be time 0 (the beginning
+  ///     of the track).
+  /// :param trackName: The name to assign to the track [String]
+
+  _addTrackName({required int track, required num time, required String trackName}) {
+    if (this._header.numeric_format == 1) {
+      track += 1;
+    }
+
+    this._tracks[track].addTrackName(this._time_to_ticks(time), trackName, insertion_order: this._event_counter);
+    this._event_counter += 1;
   }
 }

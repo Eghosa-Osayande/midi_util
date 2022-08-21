@@ -6,9 +6,6 @@ import 'utils.dart';
 /// A class that encapsulates a track name event.
 class TrackName extends GenericEvent {
 
-    
-    
-
   String evtname = 'TrackName';
   int sec_sort_order = 0;
 
