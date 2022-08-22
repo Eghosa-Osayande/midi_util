@@ -3,7 +3,7 @@
 /// be chosen to provide adequate temporal resolution.
 const int TICKSPERQUARTERNOTE = 960;
 
-Map controllerEventTypes = {'pan': 0x0a};
+const Map controllerEventTypes = const {'pan': 0x0a};
 
 /// Accidental type
 const int MAJOR = 0;
@@ -18,11 +18,11 @@ const int SHARPS = 1;
 const int FLATS = -1;
 
 class AccidentalType {
-  static int SHARPS = 1;
-  static int FLATS = -1;
+  static const int SHARPS = 1;
+  static const int FLATS = -1;
 }
 
 class AccidentalMode {
-  static int MAJOR = 0;
-  static int MINOR = 1;
+  static const int MAJOR = 0;
+  static const int MINOR = 1;
 }
