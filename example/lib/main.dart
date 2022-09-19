@@ -9,7 +9,7 @@ void main() {
   var time = 0; //    # In beats
   var duration = 0.5; //    # In beats
   var tempo = 60; //   # In BPM
-  var volume = 100; //  # 0-127, as per the MIDI standard
+  var volume = 100; //  # 0-127,  (MIDI standard)
 
   MIDIFile myMIDI = MIDIFile(numTracks: 2);
   myMIDI.addTempo(
