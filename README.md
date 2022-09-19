@@ -1,6 +1,9 @@
 
 # midi_util  
 
+
+
+---------------remove when done--------
 **midi_util** is a pure dart library that allows one to write multi-track Musical Instrument Digital Interface (MIDI) files from within dart programs (both format 1 and format 2 files are now supported).It is object-oriented and allows one to create and write these files with a minimum of fuss.
 
 It is inspired by the python library [MIDIUtil](https://github.com/MarkCWirt/MIDIUtil) by Mark Conway Wirt.
