@@ -1,36 +1,14 @@
 
 # midi_util  
 
-**midi_util** is a pure dart library that allows one to write multi-track Musical Instrument Digital Interface (MIDI) files from within dart programs (both format 1 and format 2 files are now supported).It is object-oriented and allows one to create and write these files with a minimum of fuss.
+Inspired by the python library -[MIDIUtil](https://github.com/MarkCWirt/MIDIUtil) written by Mark Conway Wirt,
+**midi_util** is a pure dart library that allows one to create MIDI files (Musical Instrument Digital Interface) within a dart program
+with minimum fuss, and supports both format 1 and 2 files.
+Due to the large documentation as well as the organic growth of the MIDI files specifications, **midi_util** has been made to effectively 
+implement aspects of this specifications that are commonly used and are in high demand.
+The **midi_util** package is properly structured to give anyone with a good understanding of the MIDI file format, and demonstrates a 
+good understanding of object oriented programming with dart the ability to extend  the library -Henc all of these makes this package easy to understand
 
-It is inspired by the python library [MIDIUtil](https://github.com/MarkCWirt/MIDIUtil) by Mark Conway Wirt.
-
-midi_util isn't a full implementation of the MIDI specification. The actual specification is a large, sprawling document which has organically grown over the course of decades. I have selectively implemented some of the more useful and common aspects of the specification. Regardless, the code is fairly easy to understand and well structured. Additions can be made to the library by anyone with a good working knowledge of the MIDI file format and a good, working knowledge of Dart. Documentation for extending the library is provided.
-
-This software is distributed under an Open Source license and you are free to use it as you see fit, provided that attribution is maintained. See License.txt in the source distribution for details.  
-
-### Quick Start
-
------------
-
-
-Using the software is easy:
-
-  
-
-* The package must be imported into your namespace
-
-* A MIDIFile object is created
-
-* Events (notes, tempo-changes, etc.) are added to the object
-
-* The MIDI file is written to disk.
-
-  
-
-Detailed documentation is provided; what follows is a simple example to get you going quickly. In this example we'll create a one track MIDI File, assign a tempo to the track, and write a C-Major scale. Then we write it to disk.
-
-  
 
     import 'dart:io';
 
