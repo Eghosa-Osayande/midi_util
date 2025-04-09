@@ -18,13 +18,13 @@ class KeySignature extends GenericEvent {
   ///Return a bytestring representation of the event, in the format required for
   /// writing into a standard midi file.
 
-  serialize(previous_event_tick) {
+  serialize(int previous_event_tick) {
     List<int> midibytes = [];
 
     var code = 0xFF;
     var subcode = 0x59;
     var event_subtype = 0x02;
-    List varTime = writeVarLength((this.tick - previous_event_tick).toInt());
+    final varTime = writeVarLength((this.tick - previous_event_tick).toInt());
 
     for (var timeByte in varTime) {
       midibytes.add(timeByte);

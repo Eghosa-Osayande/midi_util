@@ -14,6 +14,22 @@ List<int> unsignedShort(int value) {
   return r.reversed.toList();
 }
 
+int unsignedLongToInt(List<int> bytes, [int readOffset = 0]) {
+  return Uint8List.fromList(
+          bytes.toList().sublist(readOffset, readOffset + 4).reversed.toList())
+      .buffer
+      .asInt32List()
+      .first;
+}
+
+int unsignedShortToInt(List<int> bytes, [int readOffset = 0]) {
+  return Uint8List.fromList(
+          bytes.toList().sublist(readOffset, readOffset + 2).reversed.toList())
+      .buffer
+      .asInt16List()
+      .first;
+}
+
 /// Accept an integer, and serialize it as a MIDI file variable length quantity
 
 /// Some numbers in MTrk chunks are represented in a form called a variable-
@@ -32,12 +48,12 @@ List<int> unsignedShort(int value) {
 /// 16383   FF 7F
 /// 16384   81 80 00
 
-List writeVarLength(int i) {
+List<int> writeVarLength(int i) {
   if (i == 0) {
     return [0];
   }
 
-  List vlbytes = [];
+  List<int> vlbytes = [];
   int hibit = 0x00; // low-order byte has high bit cleared.
   while (i > 0) {
     vlbytes.add(((i & 0x7f) | hibit) & 0xff);
@@ -48,6 +64,21 @@ List writeVarLength(int i) {
   vlbytes = vlbytes.reversed
       .toList(); // put most-significant byte first, least significant last
   return vlbytes;
+}
+
+(int, int) readVarLength(List<int> bytes, int offset) {
+  int value = 0;
+
+  for (int byte in bytes) {
+    offset++;
+    value = (value << 7) | (byte & 0x7F);
+    if ((byte & 0x80) == 0) {
+      // Last byte in VLQ (MSB is 0)
+      break;
+    }
+  }
+
+  return (value, offset);
 }
 
 sortEvents(List<GenericEvent> eventList) {

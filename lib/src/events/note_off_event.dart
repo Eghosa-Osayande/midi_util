@@ -5,7 +5,7 @@ import 'utils.dart';
 
 class NoteOff extends GenericEvent {
   String evtname = 'NoteOff';
-  int midi_status = 0x80; // 0x8x is Note Off
+  static int get midi_status => 0x80; // 0x8x is Note Off
   int sec_sort_order = 2; // must be less than that of NoteOn
   // If two events happen at the same time, the secondary sort key is
   // ``sec_sort_order``. Thus a class of events can be processed earlier than
@@ -42,9 +42,9 @@ class NoteOff extends GenericEvent {
   /// Return a bytestring representation of the event, in the format required for
   /// writing into a standard midi file.
 
-  serialize(previous_event_tick) {
+  serialize(int previous_event_tick) {
     List<int> midibytes = [];
-    int code = this.midi_status | this.channel;
+    int code = NoteOff.midi_status | this.channel;
     List varTime = writeVarLength((this.tick - previous_event_tick).toInt());
 
     for (var timeByte in varTime) {
@@ -55,5 +55,18 @@ class NoteOff extends GenericEvent {
     midibytes.add(this.volume);
 
     return midibytes;
+  }
+
+  static (NoteOff, int) fromMIDIBytes(List<int> bytes, int offset, int tick) {
+    final code = bytes[offset];
+    offset++;
+    final pitch = bytes[offset];
+    offset++;
+    final volume = bytes[offset];
+    offset++;
+    
+    final channel = code & ~NoteOff.midi_status;
+
+    return (NoteOff(channel, pitch, tick, volume, ""), offset);
   }
 }

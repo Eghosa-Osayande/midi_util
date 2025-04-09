@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:midi_util/src/midi_file.dart';
 
 import 'events/contoller_event.dart';
 import 'events/generic_event.dart';
@@ -13,16 +16,9 @@ import 'events/utils.dart';
 
 ///A class that encapsulates a MIDI track
 ///
+
 class MIDITrack extends Object {
-  List<int> headerString = [
-    77,
-    84,
-    114,
-    107
-  ];
-  List<int> dataLength = [
-    0
-  ]; // Is calculated after the data is in place
+  List<int> dataLength = [0]; // Is calculated after the data is in place
   List<int> MIDIdata = [];
   bool closed = false;
   List<GenericEvent> eventList = [];
@@ -35,19 +31,27 @@ class MIDITrack extends Object {
     this.deinterleave = deinterleave;
   }
 
+  static List<int> get headerString => [77, 84, 114, 107];
+  static List<int> get closeEvent => [0x00, 0xFF, 0x2F, 0x00];
+
   ///   Add a note by chromatic MIDI number
   /// This event is not in chronological order. But before writing all the
   /// events to the file, I sort self.eventlist on (tick, sec_sort_order, insertion_order)
   /// which puts the events in chronological order.
-  addNoteByNumber(channel, pitch, tick, duration, volume, {annotation, insertion_order = 0}) {
-    this.eventList.add(NoteOn(channel, pitch, tick, duration, volume, annotation = annotation, insertion_order = insertion_order));
+  addNoteByNumber(channel, pitch, tick, duration, volume,
+      {annotation, insertion_order = 0}) {
+    this.eventList.add(NoteOn(channel, pitch, tick, duration, volume,
+        annotation = annotation, insertion_order = insertion_order));
 
-    this.eventList.add(NoteOff(channel, pitch, tick + duration, volume, annotation = annotation, insertion_order = insertion_order));
+    this.eventList.add(NoteOff(channel, pitch, tick + duration, volume,
+        annotation = annotation, insertion_order = insertion_order));
   }
 
   ///Add a controller event.
-  addControllerEvent(channel, tick, controller_number, parameter, {insertion_order = 0}) {
-    this.eventList.add(ControllerEvent(channel, tick, controller_number, parameter, insertion_order = insertion_order));
+  addControllerEvent(channel, tick, controller_number, parameter,
+      {insertion_order = 0}) {
+    this.eventList.add(ControllerEvent(channel, tick, controller_number,
+        parameter, insertion_order = insertion_order));
   }
 
   /// Add a tempo change (or set) event.
@@ -57,22 +61,30 @@ class MIDITrack extends Object {
 
   /// Add a program change event.
   addProgramChange(channel, tick, program, {insertion_order = 0}) {
-    eventList.add(ProgramChange(channel, tick, program, insertion_order = insertion_order));
+    eventList.add(ProgramChange(
+        channel, tick, program, insertion_order = insertion_order));
   }
 
   /// Add a track name event.
   addTrackName(tick, trackName, {insertion_order = 0}) {
-    this.eventList.add(TrackName(tick, trackName, insertion_order = insertion_order));
+    this
+        .eventList
+        .add(TrackName(tick, trackName, insertion_order = insertion_order));
   }
 
   /// Add a time signature.
-  addTimeSignature(tick, numerator, denominator, clocks_per_tick, notes_per_quarter, {insertion_order = 0}) {
-    this.eventList.add(TimeSignature(tick, numerator, denominator, clocks_per_tick, notes_per_quarter, insertion_order = insertion_order));
+  addTimeSignature(
+      tick, numerator, denominator, clocks_per_tick, notes_per_quarter,
+      {insertion_order = 0}) {
+    this.eventList.add(TimeSignature(tick, numerator, denominator,
+        clocks_per_tick, notes_per_quarter, insertion_order = insertion_order));
   }
 
   /// Add a key signature
-  addKeySignature(tick, accidentals, accidental_type, mode, {insertion_order = 0}) {
-    this.eventList.add(KeySignature(tick, accidentals, accidental_type, mode, insertion_order = insertion_order));
+  addKeySignature(tick, accidentals, accidental_type, mode,
+      {insertion_order = 0}) {
+    this.eventList.add(KeySignature(tick, accidentals, accidental_type, mode,
+        insertion_order = insertion_order));
   }
 
   /// Remove duplicates from the eventList.
@@ -121,12 +133,7 @@ class MIDITrack extends Object {
 
     // Write MIDI close event.
 //TODO: check that the next line is correct
-    this.MIDIdata.addAll([
-      0x00,
-      0xFF,
-      0x2F,
-      0x00
-    ]);
+    this.MIDIdata.addAll(MIDITrack.closeEvent);
 
     // Calculate the entire length of the data and write to the header
 
@@ -137,7 +144,7 @@ class MIDITrack extends Object {
   /// MIDIEventList is presumed to be already sorted in chronological order.
 
   writeEventsToStream() {
-    var previous_event_tick = 0;
+    int previous_event_tick = 0;
     for (var event in this.MIDIEventList) {
       this.MIDIdata.addAll(event.serialize(previous_event_tick));
       // previous_event_tick = event.tick
@@ -170,10 +177,7 @@ class MIDITrack extends Object {
     Map<dynamic, List> stack = {};
 
     for (var event in this.MIDIEventList) {
-      if ([
-        'NoteOn',
-        'NoteOff'
-      ].contains(event.evtname)) {
+      if (['NoteOn', 'NoteOff'].contains(event.evtname)) {
         // !!! Pitch 101 channel 5 produces the same key as pitch 10 channel 15.
         // !!! This is not the only pair of pitch,channel tuples which
         // !!! collide to the same key, just one example.  Should fix by
@@ -184,9 +188,7 @@ class MIDITrack extends Object {
           if (stack.containsKey(noteeventkey)) {
             stack[noteeventkey]?.add(event.tick);
           } else {
-            stack[noteeventkey] = [
-              event.tick
-            ];
+            stack[noteeventkey] = [event.tick];
           }
           tempEventList.add(event);
         } else if (event.evtname == 'NoteOff') {
@@ -221,7 +223,7 @@ class MIDITrack extends Object {
   adjustTime() {
     if (this.MIDIEventList.length == 0) return;
     List<GenericEvent> tempEventList = [];
-    int internal_origin = 0;
+    final internal_origin = 0;
     var runningTick = 0;
 
     for (var event in this.MIDIEventList) {
@@ -236,8 +238,77 @@ class MIDITrack extends Object {
 
   /// Write track to disk.
   Future<void> writeTrack(File fileHandle) async {
-    await fileHandle.writeAsBytes(this.headerString, mode: FileMode.append);
+    await fileHandle.writeAsBytes(headerString, mode: FileMode.append);
     await fileHandle.writeAsBytes(this.dataLength, mode: FileMode.append);
     await fileHandle.writeAsBytes(this.MIDIdata, mode: FileMode.append);
+    print(dataLength);
+    print(MIDIdata);
+    print("");
+  }
+
+  static (MIDITrack?, int?) fromMIDIBytes(Uint8List bytes, int offset) {
+    if (offset >= bytes.length) {
+      return (null, null);
+    }
+
+    offset = offset + MIDITrack.headerString.length;
+
+    final dataLength = unsignedLongToInt(bytes, offset);
+
+    offset += 4;
+
+    final MIDIdata = bytes.sublist(
+        offset, offset + dataLength - MIDITrack.closeEvent.length);
+
+    print("====");
+    print(dataLength);
+    print(MIDIdata);
+
+    var last_status = null;
+    final notes = <GenericEvent>[];
+
+    while (true) {
+      // End of track reached.
+      if (offset >= dataLength) {
+        return (null, null);
+      }
+
+      var (delta, newOff) = readVarLength(bytes, offset);
+
+      offset = newOff;
+
+      var status_byte = bytes[offset];
+      var peek_data = <int>[];
+      if (status_byte < 0x80) {
+        if (last_status == null) {
+          throw OSError('running status without last_status');
+        }
+        peek_data = [status_byte];
+        status_byte = last_status;
+      } else {
+        if (status_byte != 0xff)
+          // Meta messages don't set running status.
+          last_status = status_byte;
+        peek_data = [];
+      }
+
+      var msg;
+
+      if (status_byte == 0xff) {
+        // msg = read_meta_message(infile, delta);
+      } else if ([0xf0, 0xf7].contains(status_byte)) {
+        // I'm not quite clear on the difference between
+        // # f0 and f7 events.
+        // msg = read_sysex(infile, delta, clip);
+      } else {
+        // msg = read_message(infile, status_byte, peek_data, delta, clip);
+      }
+
+      notes.add(msg);
+    }
+
+    offset = offset + dataLength;
+
+    return (null, offset);
   }
 }
